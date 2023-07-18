@@ -1,0 +1,206 @@
+#include <iostream>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+
+// Define the Player class
+class Player {
+private:
+    std::string name;
+    int health;
+    int damage;
+public:
+    Player(const std::string& playerName, int playerHealth, int playerDamage)
+        : name(playerName), health(playerHealth), damage(playerDamage) {}
+    
+    std::string getName() const {
+        return name;
+    }
+    
+    int getHealth() const {
+        return health;
+    }
+    
+    int getDamage() const {
+        return damage;
+    }
+    
+    void takeDamage(int amount) {
+        health -= amount;
+    }
+    
+    bool isAlive() const {
+        return health > 0;
+    }
+};
+
+// Define the Monster class
+class Monster {
+private:
+    std::string name;
+    int health;
+    int damage;
+public:
+    Monster(const std::string& monsterName, int monsterHealth, int monsterDamage)
+        : name(monsterName), health(monsterHealth), damage(monsterDamage) {}
+    
+    std::string getName() const {
+        return name;
+    }
+    
+    int getHealth() const {
+        return health;
+    }
+    
+    int getDamage() const {
+        return damage;
+    }
+    
+    void takeDamage(int amount) {
+        health -= amount;
+    }
+    
+    bool isAlive() const {
+        return health > 0;
+    }
+};
+
+// Define the Room class
+class Room {
+private:
+    std::string description;
+    Monster* monster;
+    bool isExit;
+public:
+    Room(const std::string& roomDescription, Monster* roomMonster, bool exitRoom = false)
+        : description(roomDescription), monster(roomMonster), isExit(exitRoom) {}
+    
+    std::string getDescription() const {
+        return description;
+    }
+    
+    bool hasMonster() const {
+        return monster != nullptr;
+    }
+    
+    Monster* getMonster() const {
+        return monster;
+    }
+    
+    bool isExitRoom() const {
+        return isExit;
+    }
+};
+
+// Function to handle the battle between the player and a monster
+void battle(Player& player, Monster& monster) {
+    std::cout << "A wild " << monster.getName() << " appears!\n";
+    
+    while (player.isAlive() && monster.isAlive()) {
+        // Player attacks monster
+        int playerDamage = player.getDamage();
+        monster.takeDamage(playerDamage);
+        std::cout << player.getName() << " attacks " << monster.getName() << " for " << playerDamage << " damage.\n";
+        
+        // Check if the monster is defeated
+        if (!monster.isAlive()) {
+            std::cout << "Congratulations! You defeated the " << monster.getName() << ".\n";
+            return;
+        }
+        
+        // Monster attacks player
+        int monsterDamage = monster.getDamage();
+        player.takeDamage(monsterDamage);
+        std::cout << monster.getName() << " attacks " << player.getName() << " for " << monsterDamage << " damage.\n";
+        
+        // Check if the player is defeated
+        if (!player.isAlive()) {
+            std::cout << "Game Over! You were defeated by the " << monster.getName() << ".\n";
+            return;
+        }
+    }
+}
+
+int main() {
+    srand(static_cast<unsigned int>(time(0))); // Seed the random number generator
+    
+    // Create the player
+    Player player("Hero", 100, 20);
+    
+    // Create the monsters
+    Monster goblin("Goblin", 50, 10);
+    Monster troll("Troll", 80, 15);
+    Monster dragon("Dragon", 150, 25);
+    
+    // Create the rooms
+    Room startRoom("You are in a dark room. There is a dim light coming from the north.", &goblin);
+    Room middleRoom("You are in a large hall. You see a door to the north and an exit to the east.", &troll);
+    Room treasureRoom("You found a treasure chest! It contains a legendary sword.", nullptr);
+    Room exitRoom("Congratulations! You have reached the exit.", &dragon, true);
+    
+    // Define the game map
+    std::vector<Room> gameMap = { startRoom, middleRoom, treasureRoom, exitRoom };
+    
+    // Start the game
+    std::cout << "Welcome to the Adventure Game!\n";
+    std::cout << "You wake up in a strange place. Your goal is to find the exit and survive.\n";
+    
+    int currentRoomIndex = 0;
+    bool gameFinished = false;
+    
+    while (!gameFinished) {
+        Room& currentRoom = gameMap[currentRoomIndex];
+        
+        std::cout << "\n--- Current Room ---\n";
+        std::cout << currentRoom.getDescription() << "\n";
+        
+        if (currentRoom.hasMonster()) {
+            // Battle with the monster in the room
+            battle(player, *currentRoom.getMonster());
+            
+            if (!player.isAlive()) {
+                gameFinished = true;
+                break;
+            }
+            
+            // Remove the defeated monster from the room
+            currentRoom.getMonster() = nullptr;
+        }
+        
+        if (currentRoom.isExitRoom()) {
+            std::cout << "Congratulations! You have reached the exit. You win!\n";
+            gameFinished = true;
+        } else {
+            // Ask the player for the next move
+            char choice;
+            std::cout << "What do you want to do? (N)orth, (E)ast, (S)outh, (W)est: ";
+            std::cin >> choice;
+            
+            switch (choice) {
+                case 'N':
+                case 'n':
+                    if (currentRoomIndex < gameMap.size() - 1)
+                        currentRoomIndex++;
+                    break;
+                case 'E':
+                case 'e':
+                    std::cout << "You cannot go that way.\n";
+                    break;
+                case 'S':
+                case 's':
+                    std::cout << "You cannot go that way.\n";
+                    break;
+                case 'W':
+                case 'w':
+                    if (currentRoomIndex > 0)
+                        currentRoomIndex--;
+                    break;
+                default:
+                    std::cout << "Invalid choice. Try again.\n";
+                    break;
+            }
+        }
+    }
+    
+    return 0;
+}
