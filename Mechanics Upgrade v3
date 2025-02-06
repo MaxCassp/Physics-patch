@@ -1,0 +1,89 @@
+#include <SDL.h>
+#include <SDL_image.h>
+#include <vector>
+
+// Screen dimensions
+const int SCREEN_WIDTH = 800;
+const int SCREEN_HEIGHT = 600;
+
+// Player properties
+const int PLAYER_WIDTH = 40;
+const int PLAYER_HEIGHT = 40;
+const int PLAYER_SPEED = 5;
+const int JUMP_FORCE = 15;
+const int GRAVITY = 1;
+
+class Player {
+public:
+    SDL_Rect pos;
+    int velX = 0;
+    int velY = 0;
+    bool isJumping = false;
+    bool onGround = false;
+
+    Player(int x, int y) {
+        pos.x = x;
+        pos.y = y;
+        pos.w = PLAYER_WIDTH;
+        pos.h = PLAYER_HEIGHT;
+    }
+
+    void move() {
+        // Apply gravity
+        velY += GRAVITY;
+        pos.y += velY;
+
+        // Move left/right
+        pos.x += velX;
+
+        // Ground check
+        if (pos.y + pos.h > SCREEN_HEIGHT - 50) {
+            pos.y = SCREEN_HEIGHT - 50 - pos.h;
+            velY = 0;
+            onGround = true;
+            isJumping = false;
+        } else {
+            onGround = false;
+        }
+    }
+
+    void jump() {
+        if (onGround) {
+            velY = -JUMP_FORCE;
+            isJumping = true;
+            onGround = false;
+        }
+    }
+};
+
+int main(int argc, char* argv[]) {
+    // Initialize SDL
+    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Window* window = SDL_CreateWindow("Simple Platformer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+    // Load player texture
+    SDL_Surface* playerSurface = IMG_Load("player.png");
+    SDL_Texture* playerTexture = SDL_CreateTextureFromSurface(renderer, playerSurface);
+    SDL_FreeSurface(playerSurface);
+
+    // Create player
+    Player player(100, 100);
+
+    // Create platforms
+    std::vector<SDL_Rect> platforms = {
+        { 0, SCREEN_HEIGHT - 50, SCREEN_WIDTH, 50 }, // Ground
+        { 300, 400, 200, 20 },                     // Middle platform
+        { 100, 300, 200, 20 }                      // Top platform
+    };
+
+    // Game loop
+    bool running = true;
+    SDL_Event event;
+    while (running) {
+        // Handle events
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                running = false;
+            }
+            
